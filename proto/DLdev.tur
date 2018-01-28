@@ -1,0 +1,112 @@
+'-----------------------------------------------------------
+'
+'					INTERCEPTOR
+'
+'Homage to  Tomohiro Nishikado's 1976 Interceptor Coin Op Game
+'For Atari 800XL 8-Bit BASIC 10-Liner
+'One-player game with joystick
+'
+'Jeff Piepmeier
+'February 18, 2017
+'http://jeffpiepmeier.blogspot.com/
+'http://github.com/jeffpiep/
+'
+'Parsed with TurboBASIC XL Parser Tool 
+'http://github.com/dmsc/tbxl-parser
+$options +optimize, optimize=-convert_percent-const_replace
+'Tested on Altirra
+'bitmap graphics developed with Mad Studio
+'-----------------------------------------------------------
+
+'-----------------------------------------------------------
+' DL INSTRUCTIONS from 
+' https://www.atariarchives.org/mapping/appendix8.php
+'
+'Instruction   BASIC   Scan   Pixels  Bytes  Comments
+' Decimal   Hex   mode   lines   line   line
+' 112       70     --       8     --     --      8 blank lines
+'Display instructions
+'   2        2      0       8     40     40    text mode 0
+'   6        6      1       8     20     20    text mode l
+'   7        7      2      16     20     20    text mode 2
+'  13        D      7       2    160     40    graphics mode 7
+'Jump instructions  (three bytes long)
+'   1        1     --      --     --     --    jump to location
+'  65       41     --      --     --     --    jump and wait for VBLANK
+'                            decimal   hex   bit
+'   Horizontal scroll           16     10    4
+'   Vertical scroll             32     20    5
+'   Load memory scan            64     40    6
+'-----------------------------------------------------------
+
+'-----------------------------------------------------------
+'screen design
+'
+' graphics 15 - 4 colors, 160 x 192, 1 byte per 4 pixels
+' graphics 1 - 20 chars per line
+' 8 lines of gr 15 is 16 screens of a gr 1 line 
+'
+'-----------------------------------------------------------
+
+DIM A$(26)
+A$="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+'MAKE SPACE FOR LOOK UP TABLE
+'54 BYTES PER POSITION X 140 POSITIONS = 7560 BYTES + 800 FOR DRAGON = 8360 / 256 = 33
+'49151 (BFFF) is highest position
+'40704 is new RAMPTOP + 801 bytes for DRAGON = 41505 (A221)
+RAMTOP=PEEK(106):RAMTOP=RAMTOP-33:POKE 106,RAMTOP : REM 9F00
+GR.15
+POKE 559,0
+' WRITE LUT
+AAAA=RAMTOP*256+801
+ADDR=AAAA
+LINEONE=33688
+FOR COLS=0 TO 139
+    FOR ROWS=0 TO 17
+        POKE ADDR,86
+        DPOKE ADDR+1,LINEONE+COLS+ROWS*160
+        ADDR=ADDR+3
+    NEXT ROWS
+NEXT COLS
+
+DLIST = DPEEK(560): REM GET DISPLAY LIST LOCATION - SHOULD BE 7F50
+MOVE ADR("\46\60\9E\4E\50\80"),DLIST+3,6
+'DLIST+30
+
+MOVE AAAA,DLIST+29,54
+
+POKE 559,34 : REM TURN ANTIC BACK ON
+
+POKE $D404,15
+FOR I=0 TO 17
+    MOVE ADR(A$),LINEONE+I*160,26
+NEXT I
+
+LIVES=7
+SCORE=0
+? "DEFENDER",LIVES;"  ";SCORE;
+COLOR 1:PLOT 0,19:DRAWTO 159,19
+
+XWLD = 0
+
+WHILE 1=1
+XSCL = XWLD 
+
+PAUSE 0
+MOVE AAAA+TRUNC(XSCL)*54,DLIST+29,54
+
+XWLD = (XWLD + 1) MOD 26
+
+    
+
+
+
+WEND
+
+
+
+
+
+100 GOTO 100
+
+
