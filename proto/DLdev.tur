@@ -45,43 +45,56 @@ $options +optimize, optimize=-convert_percent-const_replace
 ' graphics 15 - 4 colors, 160 x 192, 1 byte per 4 pixels
 ' graphics 1 - 20 chars per line
 ' 8 lines of gr 15 is 16 screens of a gr 1 line 
-'
+' can use some space for PM?
 '-----------------------------------------------------------
 
-'TODO: add one more GR.1 line - need 34 pages of memory above RAMPTOP; add mountain drawing routine
+'TODO: make DL: 1xGR.1, 24xGR.15, 20xGR.1
+'add one more GR.1 line - need 34 pages of memory above RAMPTOP; add mountain drawing routine
 
 DIM A$(26)
 A$="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
 'MAKE SPACE FOR LOOK UP TABLE
-'54 BYTES PER POSITION X 140 POSITIONS = 7560 BYTES + 800 FOR DRAGON = 8360 / 256 = 33
+'each position is 3 x 20 = 60 bytes per position
+'60 BYTES PER POSITION X 128 POSITIONS = 7680 BYTES + 800 FOR DRAGON = 8480 / 256 = 34 pages
 '49151 (BFFF) is highest position
-'40704 is new RAMPTOP + 801 bytes for DRAGON = 41505 (A221)
-RAMTOP=PEEK(106):RAMTOP=RAMTOP-33:POKE 106,RAMTOP : REM 9F00
-GR.15
+'39936 (9C00) is new RAMPTOP + 801 bytes for DRAGON = 40737 (9F21)
+RAMTOP=PEEK(106):RAMTOP=RAMTOP-34:POKE 106,RAMTOP : REM 9E00
+GR.7
+  REM 8DA2: x3   blank 8
+  REM 8DA5:      mode D @ 8E60
+  REM 8DA8: x79  mode D
+  REM 8DF7:      mode 2 @ 9D60
+  REM 8DFA: x3   mode 2
+  REM 8DFD:      waitvbl 8DA2
+  
 POKE 559,0
 ' WRITE LUT
 AAAA=RAMTOP*256+801
 ADDR=AAAA
-LINEONE=33688 : REM depends upon RAMPTOP
+LINEONE=37328 : REM depends upon RAMPTOP
 FOR COLS=0 TO 139
-    FOR ROWS=0 TO 17
+    FOR ROWS=0 TO 19
         POKE ADDR,86
-        DPOKE ADDR+1,LINEONE+COLS+ROWS*160
+        DPOKE ADDR+1,LINEONE+COLS+ROWS*148
         ADDR=ADDR+3
     NEXT ROWS
 NEXT COLS
 
 DLIST = DPEEK(560): REM GET DISPLAY LIST LOCATION - SHOULD BE 7F50
-MOVE ADR("\46\60\9E\4E\50\80"),DLIST+3,6
+MOVE ADR("\46\60\9D\4D\60\8E\0E"),DLIST+3,7
+MOVE DLIST+9,DLIST+10,19
+
 'DLIST+30
 
-MOVE AAAA,DLIST+29,54
+MOVE AAAA,DLIST+29,60
+
 
 POKE 559,34 : REM TURN ANTIC BACK ON
 
 POKE $D404,15
-FOR I=0 TO 17
-    MOVE ADR(A$),LINEONE+I*160,26
+FOR I=0 TO 19
+    MOVE ADR(A$),LINEONE+I*148,26
 NEXT I
 
 LIVES=7
@@ -95,7 +108,7 @@ WHILE 1=1
 XSCL = XWLD 
 
 PAUSE 0
-MOVE AAAA+TRUNC(XSCL)*54,DLIST+29,54
+MOVE AAAA+TRUNC(XSCL)*60,DLIST+29,60
 
 XWLD = (XWLD + 1) MOD 26
 
