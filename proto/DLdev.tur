@@ -48,6 +48,8 @@ $options +optimize, optimize=-convert_percent-const_replace
 '
 '-----------------------------------------------------------
 
+'TODO: add one more GR.1 line - need 34 pages of memory above RAMPTOP; add mountain drawing routine
+
 DIM A$(26)
 A$="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 'MAKE SPACE FOR LOOK UP TABLE
@@ -60,7 +62,7 @@ POKE 559,0
 ' WRITE LUT
 AAAA=RAMTOP*256+801
 ADDR=AAAA
-LINEONE=33688
+LINEONE=33688 : REM depends upon RAMPTOP
 FOR COLS=0 TO 139
     FOR ROWS=0 TO 17
         POKE ADDR,86
