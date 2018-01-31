@@ -9,7 +9,7 @@
 1000 R=RAND(3)+1
 1001 R=R+(Y=8)*(R=1)-(Y=12)*(R=3)
 1005 Y=Y-(R=1)
-1010 POSITION I,Y:? A$(R,R);
+1010 POSITION I,Y:? A$(R,R); : rem POKE Y*160+I,R .... redefine char set so characters 1,2,3 are the /^\
 1020 Y=Y+(R=3)
 1030 RETURN
 
