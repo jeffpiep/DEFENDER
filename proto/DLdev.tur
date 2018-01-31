@@ -48,59 +48,59 @@ $options +optimize, optimize=-convert_percent-const_replace
 ' can use some space for PM?
 '-----------------------------------------------------------
 
-'TODO: make DL: 1xGR.1, 24xGR.15, 20xGR.1
-'add one more GR.1 line - need 34 pages of memory above RAMPTOP; add mountain drawing routine
+'TODO: don't push down graphics - just use RAM below graphics. 
+' WHY CAN I NOT reserve 34 pages of RAM? Gr. 7 screen gets blocked. THere's a 4K boundary jump that needs fixing!
 
 DIM A$(26)
 A$="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 'MAKE SPACE FOR LOOK UP TABLE
 'each position is 3 x 20 = 60 bytes per position
-'60 BYTES PER POSITION X 128 POSITIONS = 7680 BYTES + 800 FOR DRAGON = 8480 / 256 = 34 pages
-'49151 (BFFF) is highest position
-'39936 (9C00) is new RAMPTOP + 801 bytes for DRAGON = 40737 (9F21)
-RAMTOP=PEEK(106):RAMTOP=RAMTOP-34:POKE 106,RAMTOP : REM 9E00
-GR.7
-  REM 8DA2: x3   blank 8
-  REM 8DA5:      mode D @ 8E60
-  REM 8DA8: x79  mode D
-  REM 8DF7:      mode 2 @ 9D60
-  REM 8DFA: x3   mode 2
-  REM 8DFD:      waitvbl 8DA2
+'60 BYTES PER POSITION X 140 POSITIONS = 8400 BYTES
+GR.15
+  REM A050: x3   blank 8
+  REM A053:      mode E @ A150
+  REM A056: x93  mode E
+  REM A0B3:      mode E @ B000
+  REM A0B6: x65  mode E
+  REM A0F7:      mode 2 @ BF60
+  REM A0FA: x3   mode 2
+  REM A0FD:      waitvbl A050
   
 POKE 559,0
 ' WRITE LUT
-AAAA=RAMTOP*256+801
-ADDR=AAAA
-LINEONE=37328 : REM depends upon RAMPTOP
+LUT=$7F00
+ADDR=LUT
+LINEONE=42176 : REM depends upon RAMPTOP
 FOR COLS=0 TO 139
     FOR ROWS=0 TO 19
         POKE ADDR,86
-        DPOKE ADDR+1,LINEONE+COLS+ROWS*148
+        DPOKE ADDR+1,LINEONE+COLS+ROWS*160
         ADDR=ADDR+3
     NEXT ROWS
 NEXT COLS
 
 DLIST = DPEEK(560): REM GET DISPLAY LIST LOCATION - SHOULD BE 7F50
-MOVE ADR("\46\60\9D\4D\60\8E\0E"),DLIST+3,7
-MOVE DLIST+9,DLIST+10,19
-
+MOVE ADR("\46\60\BF\00\4E\50\A1"),DLIST+3,7
+POKE DLIST+30,$D
+MOVE ADR("\41\50\A0"),DLIST+91,3
 'DLIST+30
 
-MOVE AAAA,DLIST+29,60
-
+MOVE LUT,DLIST+31,60
 
 POKE 559,34 : REM TURN ANTIC BACK ON
 
 POKE $D404,15
 FOR I=0 TO 19
-    MOVE ADR(A$),LINEONE+I*148,26
+    MOVE ADR(A$),LINEONE+I*160,26
 NEXT I
 
 LIVES=7
 SCORE=0
 ? "DEFENDER",LIVES;"  ";SCORE;
-COLOR 1:PLOT 0,19:DRAWTO 159,19
+COLOR 1:PLOT 0,0:DRAWTO 159,0
+COLOR 2:PLOT 0,0:DRAWTO 159,21
+COLOR 3:PLOT 0,21:DRAWTO 159,21
 
 XWLD = 0
 
@@ -108,9 +108,9 @@ WHILE 1=1
 XSCL = XWLD 
 
 PAUSE 0
-MOVE AAAA+TRUNC(XSCL)*60,DLIST+29,60
+MOVE LUT+TRUNC(XSCL)*60,DLIST+31,60
 
-XWLD = (XWLD + 1) MOD 26
+XWLD = (XWLD + 1) MOD 140
 
     
 
