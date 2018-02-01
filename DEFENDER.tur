@@ -1,0 +1,103 @@
+'-----------------------------------------------------------
+'
+'					DEFENDER
+'
+'For Atari 800XL 8-Bit BASIC 10-Liner
+'One-player game with joystick
+'
+'Jeff Piepmeier
+'January 31, 2018
+'http://jeffpiepmeier.blogspot.com/
+'http://github.com/jeffpiep/
+'
+'Parsed with TurboBASIC XL Parser Tool 
+'http://github.com/dmsc/tbxl-parser
+$options +optimize, optimize=-convert_percent-const_replace
+'Tested on Altirra
+'bitmap graphics developed with Mad Studio
+'-----------------------------------------------------------
+
+'base the memory map on graphics mode 15
+GR.15
+
+'turn off video DMA
+POKE 559,0
+'write coarse-scrolling LUT to RAM below video
+LUT=$7F00
+ADDR=LUT
+LINEONE=42176 : REM start of character graphics in video ram
+FOR COLS=0 TO 139
+    FOR ROWS=0 TO 19
+        POKE ADDR,86
+        DPOKE ADDR+1,LINEONE+COLS+ROWS*160
+        ADDR=ADDR+3
+    NEXT ROWS
+NEXT COLS
+
+'build new display list
+DLIST = DPEEK(560): REM GET DISPLAY LIST LOCATION - SHOULD BE A050
+'one line of graphics 1 mapped to text window; blank line; start gr.15
+MOVE ADR("\46\62\BF\00\4E\50\A1"),DLIST+3,7
+'throw in a line of gr.7
+POKE DLIST+30,$D
+'followed by gr.1 graphics 
+MOVE LUT+70*60,DLIST+31,60
+'end the list
+MOVE ADR("\41\50\A0"),DLIST+91,3
+
+'set up PM graphics
+
+'set up new character set by copying the one in ROM to blank space in gr.15 
+CHROM=PEEK(756)*256
+MOVE CHROM,$B800,512
+POKE 756,$B8
+'copy some ATASCII characters into !"#
+MOVE CHROM+512+6*8,$B800+1*8,16
+'MOVE CHROM+512+7*8,$B800+2*8,8
+MOVE CHROM+512+13*8,$B800+3*8,8
+MOVE ADR("\7C\D6\D6\7C\38\7C\54\92"),$B800+4*8,8
+
+'draw the mountains
+DIM MTNY(159)
+Y=1
+FOR I=0 TO 159
+    'choose random slope
+    R=RAND(3)+1
+    'check for top or bottom boundaries
+    R=R+(Y=0)*(R=1)-(Y=4)*(R=2)
+    'increase height if needed
+    Y=Y-(R=1)
+    'insert character into last last 5 rows of map
+    POKE $AE20+Y*160+I,R 
+    'remember the height
+    MTNY(I)=Y
+    'decrease height if needed
+    Y=Y+(R=2)
+NEXT I
+
+POKE 559,34 : REM TURN ANTIC BACK ON
+
+LIVES=7
+SCORE=0
+? "defender"," ";LIVES;"   00000";
+
+'set fine scroll to show all
+POKE $D404,12
+
+'draw some stuff
+COLOR 1:PLOT 0,0:DRAWTO 159,0
+COLOR 2:PLOT 0,0:DRAWTO 159,21
+COLOR 3:PLOT 0,21:DRAWTO 159,21
+
+XWLD = 70
+
+WHILE 1=1
+XWLD = XWLD + (PTRIG(0)-PTRIG(1))/2
+XWLD = XWLD+(XWLD<0)-(XWLD>138) 
+XSCL = XWLD 
+
+PAUSE 0
+POKE $D404,12-FRAC(XSCL)*8
+MOVE LUT+TRUNC(XSCL)*60,DLIST+31,60
+WEND
+

@@ -1,5 +1,6 @@
 1 DIM A$(3)
-2 A$="\06\0D\07"
+2 A$="\06\07\0D"
+
 3 CLS
 10 Y=10
 20 FOR I=0 TO 38
@@ -7,9 +8,25 @@
 40 NEXT I
 50 PAUSE 60:GOTO 3
 1000 R=RAND(3)+1
-1001 R=R+(Y=8)*(R=1)-(Y=12)*(R=3)
+1001 R=R+(Y=8)*(R=1)-(Y=12)*(R=2)
 1005 Y=Y-(R=1)
 1010 POSITION I,Y:? A$(R,R); : rem POKE Y*160+I,R .... redefine char set so characters 1,2,3 are the /^\
-1020 Y=Y+(R=3)
+1020 Y=Y+(R=2)
 1030 RETURN
+
+REM 1 DIM A$(3)
+REM 2 A$="\06\07\0E"
+
+REM 3 CLS
+REM 10 Y=10
+REM 20 FOR I=0 TO 38
+REM 30   GOSUB 1000
+REM 40 NEXT I
+REM 50 PAUSE 60:GOTO 3
+REM 1000 R=RAND(3)+1
+REM 1001 R=R+(Y=8)*((R=1)-(R=3))+(Y=12)*(R=2)
+REM 1005 Y=Y+(R=2)
+REM 1010 POSITION I,Y:? A$(R,R); : rem POKE Y*160+I,R .... redefine char set so characters 1,2,3 are the /^\
+REM 1020 Y=Y-(R=1)
+REM 1030 RETURN
 

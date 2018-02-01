@@ -1,18 +1,21 @@
+$options +optimize, optimize=-convert_percent-const_replace
 CHROM=PEEK(756)*256
 MOVE CHROM,$B800,512
-POKE 756,$B8
-MOVE CHROM+512+6*8,$B800+1*8,8
-MOVE CHROM+512+13*8,$B800+2*8,8
-MOVE CHROM+512+7*8,$B800+3*8,8
 
-10 Y=10
+MOVE CHROM+512+6*8,$B800+1*8,16
+'MOVE CHROM+512+7*8,$B800+2*8,8
+MOVE CHROM+512+13*8,$B800+3*8,8
+
+
+9 cls: POKE 756,$B8
+10 Y=21
 20 FOR I=0 TO 39
 30   GOSUB 1000
 40 NEXT I
-50 PAUSE 60:GOTO 10
+50 PAUSE 60:GOTO 9
 1000 R=RAND(3)+1
-1001 R=R+(Y=8)*(R=1)-(Y=12)*(R=3)
+1001 R=R+(Y=19)*(R=1)-(Y=23)*(R=2)
 1005 Y=Y-(R=1)
-1010 POKE $BC40+Y*40+I,R : rem POKE Y*160+I,R .... redefine char set so characters 1,2,3 are the /^\
-1020 Y=Y+(R=3)
+1010 POKE $BC40+Y*40+I,R : rem 1,2,3 are the /\^
+1020 Y=Y+(R=2)
 1030 RETURN
