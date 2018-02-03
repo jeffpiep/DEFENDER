@@ -1,0 +1,39 @@
+1  PMBASE=54279:REM                    Player-missile base pointer
+2  RAMTOP=106:REM                      OS top of RAM pointer
+3  SDMCTL=559:REM                      RAM shadow of DMACTL register
+4  GRACTL=53277:REM                    CTIA graphics control register
+5  HPOSP0=53248:REM                    Horizontal position of P0
+6  PCOLR0=704:REM                      Shadow of player 0 color
+10 GRAPHICS 0:SETCOLOR 2,0,0:REM       Set background color to black
+20 X=0:REM                             BASIC's player horizontal position
+30 Y=48:REM                            BASIC's player vertical position
+40 A=PEEK(RAMTOP)-8:REM                Get RAM 2K below top of RAM
+50 POKE PMBASE,A:REM                   Tell ANTIC where PM RAM is
+60 MYPMBASE=256*A:REM                  Keep track of PM RAM address
+70 POKE SDMCTL,46:REM                  Enable PM DMA with 2-line res
+80 POKE GRACTL,3:REM                   Enable PM display
+90 POKE HPOSP0,100:REM                 Declare horizontal position
+100 FOR I=MYPMBASE+512 TO MYPMBASE+640:REM this loop clears player
+110 POKE I,0
+120 NEXT I
+130 FOR I=MYPMBASE+512+Y TO MYPMBASE+518+Y
+140 READ A:REM                         This loop draws the player
+150 POKE I,A
+160 NEXT I
+170 DATA 8,17,35,255,32,16,8
+180 POKE PCOLR0,88:REM                 Make the player pink
+190 A=STICK(0):REM                     Read joystick
+200 IF A=15 THEN GOTO 190:REM          If inactive, try again
+210 IF A=11 THEN X=X-1:POKE HPOSP0,X
+220 IF A=7 THEN X=X+1:POKE HPOSP0,X
+230 IF A<>13 THEN GOTO 280
+240 FOR I=8 TO 0 STEP -1
+250 POKE MYPMBASE+512+Y+I,PEEK(MYPMBASE+511+Y+I)
+260 NEXT I
+270 Y=Y+1
+280 IF A<>14 THEN GOTO 190
+290 FOR I=0 TO 8
+300 POKE MYPMBASE+511+Y+I,PEEK(MYPMBASE+512+Y+I)
+310 NEXT I
+320 Y=Y-1
+330 GOTO 190

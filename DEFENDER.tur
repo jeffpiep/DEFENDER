@@ -75,11 +75,19 @@ FOR I=0 TO 159
     Y=Y+(R=2)
 NEXT I
 
+POKE $AB00+80,4
+POKE $AB00+81,4+64
+POKE $AB00+82,4+64+64
+POKE $AB00+83,4+64+64+64
+
+
+
+
 POKE 559,34 : REM TURN ANTIC BACK ON
 
 LIVES=7
 SCORE=0
-? "defender"," ";LIVES;"   00000";
+? "defender","aaa   00000";
 
 'set fine scroll to show all
 POKE $D404,12
