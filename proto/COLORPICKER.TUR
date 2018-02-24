@@ -1,0 +1,13 @@
+
+GRAPHICS 2
+I=15
+WHILE 1=1
+ POKE 708,I
+ POSITION 0,4:? #6,I;"  ";
+ CLS:?I
+S=STICK(0)
+UD=(S&2=0)-(S&1=0)
+PAUSE 1
+I=I+UD
+I=I*(I>-1)*(I<256)
+WEND

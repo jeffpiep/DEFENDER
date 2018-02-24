@@ -1,0 +1,83 @@
+$options +optimize
+
+GR.0 
+POSITION 0,0:?"    )     )              )"
+POSITION 0,8:?"    $     $"
+POSITION 0,11:?"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+FIELDWIDTH=40
+LINEONE=$BC40
+LASTPLACE=LINEONE+11*FIELDWIDTH-1
+NBAD=2
+DIM BADDIES(NBAD,2)
+FOR I=0 TO NBAD
+    POKE LINEONE+FIELDWIDTH+RAND(5*FIELDWIDTH),5 : REM PUT DOWN BADDIES
+NEXT I
+
+
+DO
+ALTIDX=NOT ALTIDX
+REPEAT
+    REM DEBUG PRINTS
+    REM POSITION 2,23: ? ALTIDX,IDX;"        ";
+    LL=LINEONE+IDX
+    PLL = PEEK(LL)
+    LLP = LL+FIELDWIDTH
+    PLP = PEEK(LLP)
+    LLM = LL-FIELDWIDTH
+    IF PLL=4
+        IF PEEK(LLM)=PLP
+            POKE LL,0
+            POKE LLP,4
+        ENDIF
+    ENDIF
+    IF PLL=5+(ALTIDX=0)
+        LLF=LLP+RAND(3)-1
+        IF (LLF<LASTPLACE) & (PEEK(LLF)=0)
+            POKE LL,0
+            POKE LLF,5+ALTIDX
+        ELSE 
+            POKE LL,7+ALTIDX
+        ENDIF
+    ENDIF
+    IF PLL=7+(ALTIDX=0)
+        LLF=LLM+RAND(3)-1
+        IF (LLF>LINEONE) & (PEEK(LLF)=0)
+            POKE LL,0
+            POKE LLF,7+ALTIDX
+        ELSE 
+            POKE LL,5+ALTIDX
+        ENDIF
+    ENDIF 
+    IF PLL=9+(ALTIDX=0)
+        IF PLP=0
+            POKE LL,0
+            POKE LLP,9+ALTIDX
+        ELSE 
+            IF PLP<4
+                POKE LL,7+ALTIDX
+            ENDIF
+        ENDIF
+        IF PLP=4
+            POKE LL,11+ALTIDX
+        ENDIF
+    ENDIF
+    IF PLL=11+(ALTIDX=0)
+        IF LLM>LINEONE
+            POKE LLP,0
+            POKE LLM,11+ALTIDX
+            POKE LL,4
+        ELSE
+            POKE LLP,0
+            POKE LL,0
+            PEOPLE=PEOPLE-1
+        ENDIF
+    ENDIF
+
+    REM IF PLL=13+(ALTIDX=0)
+        REM REM SET LLF TO NEAREST NEIGHBOR TOWARDS SHIP
+        REM LLF =   
+    REM ENDIF
+    IDX=IDX+1
+UNTIL IDX=FIELDWIDTH*11
+IDX=0
+LOOP
