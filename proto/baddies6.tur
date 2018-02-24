@@ -1,0 +1,91 @@
+$options +optimize
+
+GR.0 
+REM POSITION 0,0:?"    )     )              )"
+REM POSITION 0,8:?"    $     $"
+FOR I=0 TO 39
+   POSITION I,11+(I MOD 4):?"!";
+NEXT I
+FIELDWIDTH=40
+LINEONE=$BC40
+
+NA = 10
+DIM AI(NA,2)
+FOR I=1 TO NA
+    REPEAT 
+        PX = RAND(FIELDWIDTH) : REM X LOCATION OF PEOPLE
+        PPX = LINEONE+10*FIELDWIDTH+PX 
+    UNTIL PEEK(PPX)=0
+    AI(I,1) = PPX : REM PLAYFIELD ADDRESS
+    POKE AI(I,1),$04 : REM INSERT PEOPLE
+    AI(I,2) = LINEONE+PX
+    POKE AI(I,2),$09 : REM INSERT LATENT ABDUCTOR
+NEXT I
+
+COLOR 3
+ND = 20 
+FOR I=0 TO ND
+    REPEAT : REM FIND FREE COLUMN
+        X = 10+RAND(FIELDWIDTH-20)
+    UNTIL PEEK(LINEONE+X)=0
+    Y = 1+RAND(12)
+    REM PLOT 79-QUARTER+X/2,Y+1
+    POKE LINEONE+X+Y*FIELDWIDTH, $05 : REM PUT DOWN BADDIES
+NEXT I
+
+DO
+IDX=1
+REPEAT
+    REM DEBUG PRINTS
+    REM POSITION 2,23: ? ALTIDX,IDX;"        ";
+    
+    REM PROCESS PEOPLE THEN ABDUCTORS
+    LL=AI(IDX,1)
+    IF LL>0
+        LLP=LL+FIELDWIDTH
+        IF (PEEK(LL-FIELDWIDTH)=0) & (PEEK(LLP)=0)
+            POKE LL,0
+            POKE LLP,4
+            AI(IDX,1)=LLP
+        ENDIF
+    ENDIF
+    LL=AI(IDX,2)
+    IF LL>0
+        PLL=PEEK(LL)
+        LLP = LL+FIELDWIDTH
+        PLP = PEEK(LLP)
+        LLM = LL-FIELDWIDTH
+        IF PLL=7
+            IF PLP=0
+                POKE LL,0
+                POKE LLP,7
+                AI(IDX,2)=LLP
+            ELSE : IF PLP=4
+                POKE LL,8
+                ENDIF
+            ENDIF
+        ENDIF
+        IF PLL=8
+            IF LLM>LINEONE
+                POKE LLP,0
+                POKE LLM,8
+                AI(IDX,2)=LLM
+                POKE LL,4
+                AI(IDX,1)=LL
+            ELSE
+                POKE LLP,0
+                POKE LL,0
+                AI(IDX,1)=-1
+                AI(IDX,2)=-1
+                PEOPLE=PEOPLE-1
+            ENDIF
+        ENDIF
+        IF PLL=9
+            IF RND<.05
+                POKE LL,7
+            ENDIF
+        ENDIF
+    ENDIF : REM LL>0
+    IDX=IDX+1
+UNTIL IDX>NA : REM FIELDWIDTH*11
+LOOP

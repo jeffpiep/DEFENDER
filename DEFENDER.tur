@@ -14,7 +14,7 @@
 'http://github.com/dmsc/tbxl-parser
 $options +optimize
 'use %0 replace to get longer lines (less memory?)
-'options +optimize, optimize=-convert_percent-const_replace
+'$options +optimize, optimize=-convert_percent-const_replace
 'Tested on Altirra
 'bitmap graphics developed with Mad Studio
 '-----------------------------------------------------------
@@ -48,6 +48,16 @@ FOR COLS=0 TO 139
     POKE 657,2
 NEXT COLS
 
+'COMPLETE THE DISPLAY LIST
+'throw in a line of gr.7
+POKE DLIST+31,0
+'followed by gr.1 graphics 
+MOVE LUT+70*60,DLIST+32,60
+'end the list
+MOVE ADR("\41\50\A0"),DLIST+92,3
+'one line of graphics 1 mapped to text window; blank line; start gr.15
+MOVE ADR("\00\4E\50\A1"),DLIST+6,4
+
 'set up PM graphics
 'SET UP SPRITES/PLAYER MISSLE GRAPHICS
 POKE $D407,$B0 : REM PMBASE at B000 inside of GR 15 setup
@@ -65,6 +75,7 @@ REM Overlaps of players have 3rd color                32      5
 POKE 623,49 : REM SET GPRIOR 49 = 1+16+32
 REM RADAR SPRITE
 MOVE ADR("\F0\90\90\90\90\90\90\90\90\90\90\90\90\90\90\90\90\90\90\F0"),$B32A,20
+POKE 559,34+12+16: REM ENABLE PM DMA WITH 1-LINE RES 
 
 'set up new character set by copying the one in ROM to blank space in gr.15 
 CHROM=PEEK(756)*256
@@ -76,11 +87,17 @@ MOVE CHROM+512+6*8,$B800+1*8,16
 MOVE CHROM+512+13*8,$B800+3*8,8
 MOVE ADR("\30\38\30\20\70\20\20\70"),$B800+4*8,8
 MOVE ADR("\7C\D6\D6\7C\38\7C\54\92"),$B800+5*8,8
-MOVE $B800+5*8,$B800+6*8,7*8
+MOVE $B800+5*8,$B800+6*8,3*8
+MOVE $B800,$B800+9*8,8
 MOVE SHIPADR-2,$B800+33*8,8
 
+'draw the RADAR outline
+COLOR 3
+PLOT 0,21:DRAWTO 159,21
+PLOT 78-QUARTER,21 : DRAWTO 78-QUARTER,0
+DRAWTO 80+QUARTER,0 : DRAWTO 80+QUARTER,21
+
 'draw the mountains
-DIM MTNY(FIELDWIDTH-1)
 C.2
 Y=1
 FOR I=0 TO (FIELDWIDTH-1)
@@ -93,35 +110,13 @@ FOR I=0 TO (FIELDWIDTH-1)
     'insert character into last last 5 rows of map
     POKE $A4C0+(Y+14)*FIELDWIDTH+I,R+64 
     'remember the height
-    MTNY(I)=Y
     PLOT 79-QUARTER+I/2,16+Y-(Y=21)
     'decrease height if needed
     Y=Y+(R=2)
 NEXT I
 
-POKE 559,34+12+16: REM ENABLE PM DMA WITH 1-LINE RES AND TURN ANTIC BACK ON
-
 'set fine scroll to show all
 POKE $D404,12
-
-'draw the RADAR outline
-COLOR 3
-PLOT 0,21:DRAWTO 159,21
-PLOT 79-QUARTER,21:DRAWTO 79-QUARTER,0
-DRAWTO 79+QUARTER,0:DRAWTO 79+QUARTER,21
-
-'generate some BADDIES
-
-
-'COMPLETE THE DISPLAY LIST
-'throw in a line of gr.7
-POKE DLIST+31,0
-'followed by gr.1 graphics 
-MOVE LUT+70*60,DLIST+32,60
-'end the list
-MOVE ADR("\41\50\A0"),DLIST+92,3
-'one line of graphics 1 mapped to text window; blank line; start gr.15
-MOVE ADR("\00\4E\50\A1"),DLIST+6,4
 
 XWLD = 70
 DX=-1
@@ -131,7 +126,35 @@ SCORE=0
 ?"\E1\E1\E1\E1\E1";
 POKE $D000,120
 
-WHILE 1=1
+'generate some BADDIES
+
+NA = 10
+DIM AI(NA,2)
+FOR I=1 TO NA
+    REPEAT 
+        PX = RAND(FIELDWIDTH) : REM X LOCATION OF PEOPLE
+        PPX = LINEONE+13*FIELDWIDTH+PX 
+    UNTIL PEEK(PPX)=0
+    AI(I,1) = PPX : REM PLAYFIELD ADDRESS
+    POKE AI(I,1),$04 : REM INSERT PEOPLE
+    AI(I,2) = LINEONE+PX
+    POKE AI(I,2),$09 : REM INSERT LATENT ABDUCTOR
+NEXT I
+
+ND = 20 
+COLOR 3
+FOR I=0 TO ND
+    REPEAT 
+        X = 10+RAND(FIELDWIDTH-20)
+    UNTIL PEEK(LINEONE+X)=0
+    Y = 1+RAND(12)
+    POKE LINEONE+X+Y*FIELDWIDTH, $85 : REM PUT DOWN BADDIES
+    PLOT 79-QUARTER+X/2,Y+1
+NEXT I
+
+DO
+IDX=1
+REPEAT
     POKE 657,12
     ?SCORE;
 
@@ -150,6 +173,8 @@ WHILE 1=1
         POKE 704+I,8+16*RAND(16) : REM SET A RANDOM COLOR
     NEXT I
 
+    REM PROCESS HITS
+    
     REM PROCESS STICK INPUT
     S=STICK(0)
     UD=(S&2=0)*(PY<145)-(S&1=0)*(PY>0)
@@ -160,21 +185,94 @@ WHILE 1=1
     XWLD = XWLD + VX : REM UPDATE HORIZONTAL POSITION IN WORLD COORDINATES
     XWLD = (XWLD+139) MOD 139 : REM WRAP AROUND COORDINATE
     XF=FRAC(XWLD)*8 : REM FINE SCROLL VALUE
-    TX=TRUNC(XWLD)*60 : REM COARSE SCROLL VALUE
+    XT=TRUNC(XWLD)*60 : REM COARSE SCROLL VALUE
 
-    REM MISSILES IN RADAR: 87 MIN TO 165 MAX = MIDDILE IS 126+/-5
+    REM MISSILE SPRITES FOR RADAR POSITION INDICTATOR: 87 MIN TO 165 MAX = MIDDILE IS 126+/-5
     REM EQUATION: 0 -> 87 OR 88; 70-> 121; 140->155
-    RDRX=XWLD/2+87 : REM CONVERT WORLD COORDINATE TO RADAR COORDINATE
-
+    REM C.0 : PLOT RDRSX,RDRSY
+    POKE $B32A+RDRSY,$90
+    RDRX = XWLD/2+87 : REM CONVERT WORLD COORDINATE TO RADAR COORDINATE
+    RDRSX = RDRX-QUARTER
+    RDRSY = PY/7.25 : REM RADAR Y FOR SHIP
+    POKE $B32A+RDRSY,$91
+    REM C.1 : PLOT RDRSX,RDRSY
+    
     PAUSE 0 : REM WAIT FOR VERTICAL BLANK TO REDUCE FLICKER
     POKE $D404,12-XF : REM FINE SCROLL
-    MOVE LUT+TX,DLIST+32,60 : REM COPY IN DL FOR COARSE SCROLL
-    POKE $D006,RDRX+10 : REM MOVE INDICATORS IN RADAR DISPLAY
+    MOVE LUT+XT,DLIST+32,60 : REM COPY IN DL FOR COARSE SCROLL
+    POKE $D006,RDRX+11 : REM MOVE INDICATORS IN RADAR DISPLAY
     POKE $D007,RDRX
+    POKE $D004,RDRX+5 : REM MOVE THE SHIP IN THE RADAR DISPLAY
     MOVE SHIPADR-5*DX,$40+PM+PY,14 : REM PUT SHIP ON THE SCREEN
+    
+    REM PROCESS AI
+    REM PROCESS PEOPLE THEN ABDUCTORS
+    LL=AI(IDX,1)
+    IF LL>0
+        LLP=LL+FIELDWIDTH
+        IF (PEEK(LL-FIELDWIDTH)=0) & (PEEK(LLP)=0)
+            POKE LL,0
+            POKE LLP,4
+            AI(IDX,1)=LLP
+            X = 79 - QUARTER + ((LL-LINEONE) MOD FIELDWIDTH)/2
+            Y = 1 + (LL-LINEONE) DIV FIELDWIDTH
+            COLOR 0 : PLOT X,Y
+        ENDIF
+        X = 79 - QUARTER + ((AI(IDX,1)-LINEONE) MOD FIELDWIDTH)/2
+        Y = 1 + (AI(IDX,1)-LINEONE) DIV FIELDWIDTH
+        COLOR 1 : PLOT X,Y
+    ENDIF
+    
+    LL=AI(IDX,2)
+    IF LL>0
+        PLL=PEEK(LL)
+        LLP = LL+FIELDWIDTH
+        PLP = PEEK(LLP)
+        LLM = LL-FIELDWIDTH
+        IF PLL=$47
+            IF PLP=0
+                X = 79 - QUARTER + ((LL-LINEONE) MOD FIELDWIDTH)/2
+                Y = 1 + (LL-LINEONE) DIV FIELDWIDTH
+                COLOR 0 : PLOT X,Y
+                COLOR 2 : PLOT X,Y+1
+                POKE LL,0
+                POKE LLP,$47
+                AI(IDX,2)=LLP
+            ELSE : IF PLP=4
+                POKE LL,$48
+                ENDIF
+            ENDIF
+        ENDIF
+        IF PLL=$48
+            X = 79 - QUARTER + ((LL-LINEONE) MOD FIELDWIDTH)/2
+            Y = 1 + (LL-LINEONE) DIV FIELDWIDTH
+            COLOR 0 : PLOT X,Y : PLOT X,Y+1
+            IF LLM>LINEONE
+                POKE LLP,0
+                POKE LLM,$48
+                AI(IDX,2)=LLM
+                POKE LL,4
+                AI(IDX,1)=LL
+                COLOR 1 : PLOT X,Y
+                COLOR 2 : PLOT X,Y-1
+            ELSE
+                POKE LLP,0
+                POKE LL,0
+                AI(IDX,1)=-1
+                AI(IDX,2)=-1
+                PEOPLE=PEOPLE-1
+            ENDIF
+        ENDIF
+        IF PLL=9
+            IF RND<.05
+                POKE LL,$47
+            ENDIF
+        ENDIF
+    ENDIF : REM LL>0
 
-    REM PROCESS BADDIES
+    IDX=IDX+1
     
+UNTIL IDX>NA
     
-WEND
+LOOP
 
