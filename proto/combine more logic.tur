@@ -1,0 +1,58 @@
+    FOR I=1 TO 2
+    LL=AI(IDX,I)
+        IF LL>0
+            PLL=PEEK(LL)
+            IF PLL=9
+                IF RND<.5
+                    POKE LL,$87
+                ENDIF
+            ELSE
+                LLP=LL+FIELDWIDTH
+                PLP = PEEK(LLP)
+                LLM = LL-FIELDWIDTH
+                X = QUARTER + ((LL-LINEONE) MOD FIELDWIDTH)/2
+                Y = 1 + (LL-LINEONE) DIV FIELDWIDTH
+                IF PLL=4
+                    IF (PEEK(LLM)=0) & (PLP=0)
+                        POKE LL,0
+                        POKE LLP,4
+                        AI(IDX,1)=LLP
+                        COLOR 0 : PLOT X,Y
+                    ENDIF
+                    X1 = QUARTER + ((AI(IDX,1)-LINEONE) MOD FIELDWIDTH)/2
+                    Y1 = 1 + (AI(IDX,1)-LINEONE) DIV FIELDWIDTH
+                    COLOR 1 : PLOT X1,Y1
+                ENDIF
+                IF PLL=$87
+                    IF PLP=0
+                        COLOR 0 : PLOT X,Y
+                        COLOR 3 : PLOT X,Y+1
+                        POKE LL,0
+                        POKE LLP,$87
+                        AI(IDX,2)=LLP
+                    ELSE : IF PLP=4
+                        POKE LL,$88
+                        ENDIF
+                    ENDIF
+                ENDIF
+                IF PLL=$88
+                    COLOR 0 : PLOT X,Y : PLOT X,Y+1
+                    IF LLM>LINEONE
+                        POKE LLP,0
+                        POKE LLM,$88
+                        AI(IDX,2)=LLM
+                        POKE LL,4
+                        AI(IDX,1)=LL
+                        COLOR 1 : PLOT X,Y
+                        COLOR 3 : PLOT X,Y-1
+                    ELSE
+                        POKE LLP,0
+                        POKE LL,0
+                        AI(IDX,1)=-1
+                        AI(IDX,2)=-1
+                        PEOPLE=PEOPLE-1
+                    ENDIF
+                ENDIF
+            ENDIF
+        ENDIF : REM LL>0
+    NEXT I

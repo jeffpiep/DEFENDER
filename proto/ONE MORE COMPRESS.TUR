@@ -1,0 +1,37 @@
+                    IF PLL=4
+                        IF (PEEK(LLM)=0) & (PLP=0)
+                            POKE LL,0
+                            POKE LLP,PLL
+                            AI(IDX,I)=LLP
+                            Y=Y+1
+                        ENDIF
+                        COLOR 1 : PLOT X,Y
+                    ENDIF
+                    IF PLL=$87
+                        IF PLP=0
+                            COLOR 3 : PLOT X,Y+1
+                            POKE LL,0
+                            POKE LLP,PLL
+                            AI(IDX,I)=LLP
+                        ELSE
+                            IF PLP=4
+                                POKE LL,PLL+1
+                            ENDIF
+                        ENDIF
+                    ENDIF
+                    
+                    
+                    
+IF (PLL=4)!(PLL=$87)
+    IF PLP=4
+        POKE LL,PLL+1
+    ELSE
+        IF (PLP=0)&( (PEEK(LLM)=0)!(PLL=$87) )
+            POKE LL,0
+            POKE LLP,PLL
+            AI(IDX,I)=LLP
+            Y=Y+1
+        ENDIF
+        COLOR 1 + (PLL&2) : PLOT X,Y
+    ENDIF
+ENDIF
